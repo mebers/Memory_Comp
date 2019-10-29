@@ -13,18 +13,20 @@ from timeit import default_timer as timer
 
 # Evaluating G function.
 def G_ang_int(l1,l2,l3,m1,m2,m3):
+    #Evalute angular integral using equation (10) in memory paper
     
     eval = (-1.)**(m1+m2)*np.sqrt(((2.*l1+1.)*(2.*l2+1.)*(2.*l3+1.))/(4.*np.pi)) \
                 *wigner_3j(l1,l2,l3,0,-2,2)*wigner_3j(l1,l2,l3,-m1,m2,-m3)
+    
     return float(eval)
 
-# print G_ang_int(2,2,2,0,0,-2)
 
 def h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
     
-    t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
-                M, dist_mpc, 0, f_ref, phi_ref)    
-
+    if approximant == 'NRSur7dq4' or 'NRSur7dq2':
+        t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
+                M, dist_mpc, f_low, f_ref, phi_ref)
+    
     h22 = mode_dict['h_l2m2']
 
     #Compute gradient
@@ -42,15 +44,20 @@ def h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,
 
 def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
     
-    t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
-            M, dist_mpc, f_low, f_ref,phi_ref)  
-
+    if approximant == 'NRSur7dq4' or 'NRSur7dq2':
+        t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
+                M, dist_mpc, f_low, f_ref,phi_ref)
+    else:
+        print('Use the surrogate waveforms "NRSur7dq2" or "NRSur7dq4", for other waveform models \
+                    the memory computation is not working yet')
+        exit()
+    
+    # Take time derivative of oscillatory hlm modes
     mode_dict.update({mode: np.gradient(mode_dict[mode],dt) for mode in mode_dict.keys()})
 
     dh20mem_p = np.zeros(len(t))
     dh20mem_c = np.zeros(len(t))
     const = dist_mpc*10**6*utils.PC_SI/utils.C_SI*1./np.sqrt(24.)
-    print(const)
     
     llmax = 4
     for llp in range(2,llmax+1):
@@ -90,9 +97,15 @@ def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref
 
 def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
     
-    t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
-            M, dist_mpc, f_low, f_ref,phi_ref)
-
+    if approximant == 'NRSur7dq4' or 'NRSur7dq2':
+        t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
+                M, dist_mpc, f_low, f_ref,phi_ref)
+    else:
+        print('Use the surrogate waveforms "NRSur7dq2" or "NRSur7dq2", for other waveform models \
+                    the memory computation is not working yet')
+        exit()
+    
+    # Take time derivative of oscillatory hlm modes
     mode_dict.update({mode: np.gradient(mode_dict[mode],dt) for mode in mode_dict.keys()})
     
     llmax = 4
@@ -101,7 +114,7 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
     
     for ll in range(2,llmax+1):
         const = dist_mpc*10**6*utils.PC_SI/utils.C_SI*np.sqrt(np.math.factorial(ll-2)/float(np.math.factorial(ll+2)))
-        print(const)
+
         for m in range(-ll,ll+1):
             dhmem_p = np.zeros(len(t))
             dhmem_c = np.zeros(len(t))
@@ -148,24 +161,24 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
     
 
 # Generate a waveform
-dt = 1./4096.
-dist_mpc = 100.
-f_low = 20.
-f_ref = 20.
+dt = 1./(8*16384)
+dist_mpc = 0.01
+f_low = 0.
+f_ref = 0.
 
-q = 3.2
-chi1 = np.array([-0.5, 0.4, 0.6])
-chi2 = np.array([0.6, -0.4, -0.4])
-M = 70.
-inclination = 2.*np.pi/5
+q = 1.
+chi1 = np.array([0., 0., 0.])
+chi2 = np.array([0., 0., 0.])
+M = 1.
+inclination = np.pi/2
 phi_ref = np.pi/4
 
 approximant = 'NRSur7dq4'
 
 
-t, hmemdom = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, 0,f_ref, phi_ref,inclination)
-tt, hmem20, hmemc20 = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, 0,f_ref, phi_ref,inclination)
-ttt, hmem, hmemc = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, 0,f_ref, phi_ref,inclination)
+t, hmemdom = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+tt, hmem20, hmemc20 = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+ttt, hmem, hmemc = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
 
 plt.plot(t,np.real(hmemdom),label='Dominant memory')
 plt.plot(tt,hmem20,label=r'memory in $h_+^{20}$')
@@ -177,5 +190,5 @@ plt.legend(loc=2)
 plt.xlabel(r'$t$')
 plt.ylabel(r'$h^\mathrm{mem}$')
 plt.tight_layout()
-plt.savefig('memory_generic.pdf')
+plt.savefig('memory_test.pdf')
 plt.close()
