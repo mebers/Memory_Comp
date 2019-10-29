@@ -7,15 +7,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sympy.physics.wigner import wigner_3j
 import utils
+from timeit import default_timer as timer
 
 
 
 # Evaluating G function.
 def G_ang_int(l1,l2,l3,m1,m2,m3):
     
-    eval = (-1)**(m1+m2)*np.sqrt(((2.*l1+1.)*(2.*l2+1)*(2.*l3+1))/(4*np.pi)) \
+    eval = (-1.)**(m1+m2)*np.sqrt(((2.*l1+1.)*(2.*l2+1.)*(2.*l3+1.))/(4.*np.pi)) \
                 *wigner_3j(l1,l2,l3,0,-2,2)*wigner_3j(l1,l2,l3,-m1,m2,-m3)
-    return eval
+    return float(eval)
 
 # print G_ang_int(2,2,2,0,0,-2)
 
@@ -50,6 +51,7 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
     dh20mem_p = np.zeros(len(t))
     dh20mem_c = np.zeros(len(t))
     const = dist_mpc*10**6*utils.PC_SI/utils.C_SI*1./np.sqrt(24.)
+    print(const)
     
     for llp in range(2,5):
         for llpp in range(2,5):
@@ -61,25 +63,42 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
                     if G_ang_int(2,llp,llpp,0,mp,mpp)==0:
                         continue
                     
+                    start = timer()
                     hdotp = mode_dict['h_l%dm%d'%(llp, mp)]
                     hdotp_conj = np.conjugate(mode_dict['h_l%dm%d'%(llpp, mpp)])
+
                     prod_hdot_p = np.array(np.real(hdotp*hdotp_conj))
                     prod_hdot_c = np.array(np.imag(hdotp*hdotp_conj))
-                        
+
                     dh20mem_p = dh20mem_p + const*G_ang_int(2,llp,llpp,0,mp,mpp)*prod_hdot_p
                     dh20mem_c = dh20mem_c + const*G_ang_int(2,llp,llpp,0,mp,mpp)*prod_hdot_c
+                    
+                    end = timer()
+                    print('Time for mode %d %d %d %d'%(llp,llpp,mp,mpp))
+                    print(end - start)
 
-                    print(llp,llpp,mp,mpp)
-                    #imode = mode_dict['h_l%dm%d'%(ll, m)]
     
     h20mem_p = np.cumsum(dh20mem_p)*dt   
     h20mem_c = np.cumsum(dh20mem_c)*dt
-    hmem_p = h20mem_p*harmonics.sYlm(-2, 2, 0, inclination, np.pi/2)
-    hmem_c = h20mem_c*harmonics.sYlm(-2, 2, 0, inclination, np.pi/2)
+    hmem_p = h20mem_p*harmonics.sYlm(-2, 2, 0, inclination, phi_ref)
+    hmem_c = h20mem_c*harmonics.sYlm(-2, 2, 0, inclination, phi_ref)
 
     return t, hmem_p, hmem_c
 
+def testloop():
+    for llp in range(2,5):
+        for llpp in range(2,5):
+            for mp in range(-llp,llp+1):
+                for mpp in range(-llpp,llpp+1):
+                    
+                    if mp != mpp:
+                        continue
+                    if G_ang_int(2,llp,llpp,0,mp,mpp)==0:
+                        continue
+                    
+                    print(llp,llpp,mp,mpp)
     
+
 # Generate a waveform
 dt = 1./4096.
 dist_mpc = 100.
@@ -87,10 +106,10 @@ f_low = 20.
 f_ref = 20.
 
 q = 1.9
-chi1 = np.array([0., 0., 0.5])
-chi2 = np.array([0., 0., 0.4])
+chi1 = np.array([0.5, 0.3, 0.5])
+chi2 = np.array([-0.6, 0.2, 0.4])
 M = 70.
-inclination = np.pi/2
+inclination = 2.*np.pi/5
 phi_ref = np.pi/4
 
 approximant = 'NRSur7dq4'
