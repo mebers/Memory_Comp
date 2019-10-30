@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+#############################################################################
+##      Filename: mymemory.py
+##      Author: Michael Ebersold
+##      Created: 18-10-2019
+##      Description: Compute memory from oscillatory waveforms
+#############################################################################
 
 import lalsimulation as lalsim
 import h5py
@@ -22,11 +28,18 @@ def G_ang_int(l1,l2,l3,m1,m2,m3):
 
 def h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
     
-    if approximant == 'NRSur7dq4' or 'NRSur7dq2':
+    if approximant == ('NRSur7dq4' or 'NRSur7dq2'):
         t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
                 M, dist_mpc, f_low, f_ref, phi_ref)
+        
+        h22 = mode_dict['h_l2m2']
+        
+    else: # For waveforms that have only the dominant mode
+        t, h = utils.generate_LAL_waveform(approximant, q, chi1, chi2, dt, M, \
+                dist_mpc, f_low, f_ref, inclination, phi_ref)
+        
+        h22 = h/utils.sYlm(-2, 2, 2, inclination, np.pi/2-phi_ref)
     
-    h22 = mode_dict['h_l2m2']
 
     #Compute gradient
     h22_dot = np.gradient(h22,dt)
@@ -37,13 +50,14 @@ def h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,
 
     # Hereditary integral
     h20mem = np.cumsum(dh20mem)*dt
-    hmem = h20mem*utils.sYlm(-2, 2, 0, inclination, phi_ref)
+    hmem = h20mem*utils.sYlm(-2, 2, 0, inclination, np.pi/2-phi_ref)
 
-    return t, hmem
+    return t, np.real(hmem), np.imag(hmem)
+
 
 def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
     
-    if approximant == 'NRSur7dq4' or 'NRSur7dq2':
+    if approximant == ('NRSur7dq4' or 'NRSur7dq2'):
         t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
                 M, dist_mpc, f_low, f_ref,phi_ref)
     else:
@@ -88,15 +102,15 @@ def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref
     
     h20mem_p = np.cumsum(dh20mem_p)*dt   
     h20mem_c = np.cumsum(dh20mem_c)*dt
-    hmem_p = h20mem_p*utils.sYlm(-2, 2, 0, inclination, phi_ref)
-    hmem_c = h20mem_c*utils.sYlm(-2, 2, 0, inclination, phi_ref)
+    hmem_p = h20mem_p*utils.sYlm(-2, 2, 0, inclination, np.pi/2-phi_ref)
+    hmem_c = h20mem_c*utils.sYlm(-2, 2, 0, inclination, np.pi/2-phi_ref)
 
     return t, hmem_p, hmem_c
 
 
 def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
     
-    if approximant == 'NRSur7dq4' or 'NRSur7dq2':
+    if approximant == ('NRSur7dq4' or 'NRSur7dq2'):
         t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
                 M, dist_mpc, f_low, f_ref,phi_ref)
     else:
@@ -153,37 +167,52 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
     
     for ll in range(2,llmax+1):
         for m in range(-ll,ll+1):
-            hmem_p = hmem_p + memp_mode_dict['h_l%dm%d'%(ll, m)]*utils.sYlm(-2, ll, m, inclination, phi_ref)
-            hmem_c = hmem_c - memc_mode_dict['h_l%dm%d'%(ll, m)]*utils.sYlm(-2, ll, m, inclination, phi_ref)
+            hmem_p = hmem_p + np.real((memp_mode_dict['h_l%dm%d'%(ll, m)]+1j*memc_mode_dict['h_l%dm%d'%(ll, m)]) \
+                                      *utils.sYlm(-2, ll, m, inclination, np.pi/2-phi_ref))
+            hmem_c = hmem_c - np.imag((memp_mode_dict['h_l%dm%d'%(ll, m)]+1j*memc_mode_dict['h_l%dm%d'%(ll, m)]) \
+                                      *utils.sYlm(-2, ll, m, inclination, np.pi/2-phi_ref))
 
     return t, hmem_p, hmem_c
     
 
 # Generate a waveform
-dt = 1./(8*16384)
-dist_mpc = 0.01
-f_low = 0.
-f_ref = 0.
+dt = 1./(4096)
+dist_mpc = 100
+f_low = 20.
+f_ref = 20.
 
-q = 1.
-chi1 = np.array([0., 0., 0.])
-chi2 = np.array([0., 0., 0.])
-M = 1.
+q = 1.8
+chi1 = np.array([0., 0., 0.5])
+chi2 = np.array([0., 0., 0.4])
+M = 70
 inclination = np.pi/2
 phi_ref = np.pi/4
 
+approximant = 'SEOBNRv4'
+t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+plt.plot(t,np.real(hmemdom),label='SEOBNRv4')
+
+approximant = 'IMRPhenomD'
+t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+plt.plot(t,np.real(hmemdom),label='IMRPhenomD')
+
+approximant = 'NRSur7dq2'
+t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+plt.plot(t,np.real(hmemdom),label='NRSur7dq2')
+
 approximant = 'NRSur7dq4'
+t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+plt.plot(t,np.real(hmemdom),label='NRSur7dq4')
 
+#t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+#tt, hmem20, hmemc20 = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+#ttt, hmem, hmemc = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
 
-t, hmemdom = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-tt, hmem20, hmemc20 = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-ttt, hmem, hmemc = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-
-plt.plot(t,np.real(hmemdom),label='Dominant memory')
-plt.plot(tt,hmem20,label=r'memory in $h_+^{20}$')
-plt.plot(tt,hmemc20,label=r'memory in $h_\times^{20}$')
-plt.plot(ttt,hmem,label=r'memory in $h_+$')
-plt.plot(ttt,hmemc,label=r'memory in $h_\times$')
+#plt.plot(t,np.real(hmemdom),label='Dominant memory')
+#plt.plot(tt,hmem20,label=r'memory in $h_+^{20}$')
+#plt.plot(tt,hmemc20,label=r'memory in $h_\times^{20}$')
+#plt.plot(ttt,hmem,label=r'memory in $h_+$')
+#plt.plot(ttt,hmemc,label=r'memory in $h_\times$')
 
 plt.legend(loc=2)
 plt.xlabel(r'$t$')

@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as P
 import os
 import h5py
-
 import lal
 import lalsimulation as lalsim
 from lal import MSUN_SI, MTSUN_SI, PC_SI, C_SI
