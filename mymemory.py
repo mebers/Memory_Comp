@@ -2,7 +2,6 @@
 
 import lalsimulation as lalsim
 import h5py
-from gwtools import harmonics
 import numpy as np
 import matplotlib.pyplot as plt
 from sympy.physics.wigner import wigner_3j
@@ -38,7 +37,7 @@ def h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,
 
     # Hereditary integral
     h20mem = np.cumsum(dh20mem)*dt
-    hmem = h20mem*harmonics.sYlm(-2, 2, 0, inclination, phi_ref)
+    hmem = h20mem*utils.sYlm(-2, 2, 0, inclination, phi_ref)
 
     return t, hmem
 
@@ -89,8 +88,8 @@ def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref
     
     h20mem_p = np.cumsum(dh20mem_p)*dt   
     h20mem_c = np.cumsum(dh20mem_c)*dt
-    hmem_p = h20mem_p*harmonics.sYlm(-2, 2, 0, inclination, phi_ref)
-    hmem_c = h20mem_c*harmonics.sYlm(-2, 2, 0, inclination, phi_ref)
+    hmem_p = h20mem_p*utils.sYlm(-2, 2, 0, inclination, phi_ref)
+    hmem_c = h20mem_c*utils.sYlm(-2, 2, 0, inclination, phi_ref)
 
     return t, hmem_p, hmem_c
 
@@ -154,8 +153,8 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
     
     for ll in range(2,llmax+1):
         for m in range(-ll,ll+1):
-            hmem_p = hmem_p + memp_mode_dict['h_l%dm%d'%(ll, m)]*harmonics.sYlm(-2, ll, m, inclination, phi_ref)
-            hmem_c = hmem_c - memc_mode_dict['h_l%dm%d'%(ll, m)]*harmonics.sYlm(-2, ll, m, inclination, phi_ref)
+            hmem_p = hmem_p + memp_mode_dict['h_l%dm%d'%(ll, m)]*utils.sYlm(-2, ll, m, inclination, phi_ref)
+            hmem_c = hmem_c - memc_mode_dict['h_l%dm%d'%(ll, m)]*utils.sYlm(-2, ll, m, inclination, phi_ref)
 
     return t, hmem_p, hmem_c
     
