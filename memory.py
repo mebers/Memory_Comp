@@ -20,7 +20,7 @@ from timeit import default_timer as timer
 def G_ang_int(l1,l2,l3,m1,m2,m3):
     #Evalute angular integral using equation (10) in memory paper
     
-    eval = (-1.)**(m1+m2)*np.sqrt(((2.*l1+1.)*(2.*l2+1.)*(2.*l3+1.))/(4.*np.pi)) \
+    eval = (-1.)**(m1+m3)*np.sqrt(((2.*l1+1.)*(2.*l2+1.)*(2.*l3+1.))/(4.*np.pi)) \
                 *wigner_3j(l1,l2,l3,0,-2,2)*wigner_3j(l1,l2,l3,-m1,m2,-m3)
     
     return float(eval)
@@ -28,7 +28,7 @@ def G_ang_int(l1,l2,l3,m1,m2,m3):
 
 def h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
     
-    if approximant == ('NRSur7dq4' or 'NRSur7dq2'):
+    if approximant in ('NRSur7dq4','NRSur7dq2'):
         t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
                 M, dist_mpc, f_low, f_ref, phi_ref)
         
@@ -38,9 +38,8 @@ def h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,
         t, h = utils.generate_LAL_waveform(approximant, q, chi1, chi2, dt, M, \
                 dist_mpc, f_low, f_ref, inclination, phi_ref)
         
-        h22 = h/utils.sYlm(-2, 2, 2, inclination, np.pi/2-phi_ref)
+        h22 = h/utils.sYlm(-2, 2, 2, inclination, np.pi/2-phi_ref)/np.sqrt(2.)
     
-
     #Compute gradient
     h22_dot = np.gradient(h22,dt)
     h22_dot_c = np.conjugate(h22_dot)
@@ -55,11 +54,21 @@ def h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,
     return t, np.real(hmem), np.imag(hmem)
 
 
-def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
+def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref, inclination, filepath=None):
     
-    if approximant == ('NRSur7dq4' or 'NRSur7dq2'):
+    if approximant in ('NRSur7dq4','NRSur7dq2'):
         t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
                 M, dist_mpc, f_low, f_ref,phi_ref)
+        
+    elif approximant == 'NR_hdf5':
+        t, mode_dict, q, s1x, s1y, s1z, s2x, s2y, s2z, f_low = utils.load_lvcnr_data(filepath, \
+                    'all', M, dt, inclination, phi_ref, dist_mpc, 0.)
+        print('mass ratio: %d'%q)
+        print('spin 1: [%d, %d, %d]'%(s1x,s1y,s1z))
+        print('spin 1: [%d, %d, %d]'%(s2x,s2y,s2z))
+        print('f_low: %d'%f_low)
+        
+        
     else:
         print('Use the surrogate waveforms "NRSur7dq2" or "NRSur7dq4", for other waveform models \
                     the memory computation is not working yet')
@@ -96,21 +105,22 @@ def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref
                     #end = timer()
                     #print('Time for mode %d %d %d %d'%(llp,llpp,mp,mpp))
                     #print(end - start)
-                    print('Combination %d %d %d %d %d %d done'%(ll,llp,llpp,m,mp,mpp))
+                    print('Combination %d %d %d %d done'%(llp,llpp,mp,mpp))
 
 
     
     h20mem_p = np.cumsum(dh20mem_p)*dt   
     h20mem_c = np.cumsum(dh20mem_c)*dt
-    hmem_p = h20mem_p*utils.sYlm(-2, 2, 0, inclination, np.pi/2-phi_ref)
-    hmem_c = h20mem_c*utils.sYlm(-2, 2, 0, inclination, np.pi/2-phi_ref)
 
+    hmem_p = np.real((h20mem_p + 1j*h20mem_c)*utils.sYlm(-2, 2, 0, inclination, np.pi/2-phi_ref))
+    hmem_c = (-1.)*np.imag((h20mem_p + 1j*h20mem_c)*utils.sYlm(-2, 2, 0, inclination, np.pi/2-phi_ref))
+    
     return t, hmem_p, hmem_c
 
 
 def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
     
-    if approximant == ('NRSur7dq4' or 'NRSur7dq2'):
+    if approximant in ('NRSur7dq4','NRSur7dq2'):
         t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
                 M, dist_mpc, f_low, f_ref,phi_ref)
     else:
@@ -178,15 +188,27 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
 # Generate a waveform
 dt = 1./(4096)
 dist_mpc = 100
-f_low = 20.
-f_ref = 20.
+f_low = 0.
+f_ref = 0.
 
-q = 1.8
-chi1 = np.array([0., 0., 0.5])
-chi2 = np.array([0., 0., 0.4])
+q = 1.
+chi1 = np.array([0., 0., 0.])
+chi2 = np.array([0., 0., 0.])
+
+#q = 2.7
+#chi1 = np.array([0.3, -0.6, 0.5])
+#chi2 = np.array([0.4, -0.3, 0.6])
 M = 70
 inclination = np.pi/2
 phi_ref = np.pi/4
+
+approximant = 'NRSur7dq4'
+
+'''
+filepath = '/home/sebastian.khan/ligo-nr-data/lvcnr-lfs/SXS/SXS_BBH_0001_Res5.h5'
+t, hmem20, hmemc20 = h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination,filepath)
+plt.plot(t,hmem20,label=r'memory in $h_+^{20}$')
+
 
 approximant = 'SEOBNRv4'
 t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
@@ -203,16 +225,16 @@ plt.plot(t,np.real(hmemdom),label='NRSur7dq2')
 approximant = 'NRSur7dq4'
 t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
 plt.plot(t,np.real(hmemdom),label='NRSur7dq4')
+'''
+t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+tt, hmem20, hmemc20 = h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+ttt, hmem, hmemc = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
 
-#t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-#tt, hmem20, hmemc20 = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-#ttt, hmem, hmemc = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-
-#plt.plot(t,np.real(hmemdom),label='Dominant memory')
-#plt.plot(tt,hmem20,label=r'memory in $h_+^{20}$')
-#plt.plot(tt,hmemc20,label=r'memory in $h_\times^{20}$')
-#plt.plot(ttt,hmem,label=r'memory in $h_+$')
-#plt.plot(ttt,hmemc,label=r'memory in $h_\times$')
+plt.plot(t,np.real(hmemdom),label='Dominant memory')
+plt.plot(tt,hmem20,label=r'memory in $h_+^{20}$')
+plt.plot(tt,hmemc20,label=r'memory in $h_\times^{20}$')
+plt.plot(ttt,hmem,label=r'memory in $h_+$')
+plt.plot(ttt,hmemc,label=r'memory in $h_\times$')
 
 plt.legend(loc=2)
 plt.xlabel(r'$t$')

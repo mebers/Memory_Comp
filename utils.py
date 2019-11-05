@@ -90,13 +90,27 @@ def load_lvcnr_data(filepath, mode, M, dt, inclination, phiRef, \
         f_low = NRh5File.attrs['f_lower_at_1MSUN']/M
     f_ref = f_low
     f_low = f_ref
-
+    lmax = 5
     # Generating the NR waveform
+    approx = lalsim.NR_hdf5
+
+    hmodes = lalsim.SimInspiralChooseTDModes(phiRef, dt, m1SI, m2SI, \
+            s1x, s1y, s1z, s2x, s2y, s2z, \
+            f_low, f_ref, distance, params_NR, lmax, approx)
+
+    t = np.arange(len(hmodes.mode.data.data)) * dt
+    
+    mode_dict = {}
+    while hmodes is not None:
+        mode_dict['h_l%dm%d'%(hmodes.l, hmodes.m)] = hmodes.mode.data.data
+        hmodes = hmodes.next
+    return t, mode_dict, q, s1x, s1y, s1z, s2x, s2y, s2z, f_low, f_ref
+
+    '''
     approx = lalsim.NR_hdf5
     hp, hc = lalsim.SimInspiralChooseTDWaveform(m1SI, m2SI, s1x, s1y, s1z,
                s2x, s2y, s2z, distance, inclination, phiRef, 0.0, 0.0, 0.0,
                dt, f_low, f_ref, params_NR, approx)
-
     h = np.array(hp.data.data - 1.j*hc.data.data)
     t = dt *np.arange(len(h))
 
@@ -105,7 +119,7 @@ def load_lvcnr_data(filepath, mode, M, dt, inclination, phiRef, \
     NRh5File.close()
 
     return t, h, q, s1x, s1y, s1z, s2x, s2y, s2z, f_low, f_ref
-
+    '''
 #-----------------------------------------------------------------
 def generate_LAL_waveform(approximant, q, chiA0, chiB0, dt, M, \
     dist_mpc, f_low, f_ref, inclination=0, phi_ref=0., ellMax=None, \
@@ -207,6 +221,25 @@ def fac(n):
       result *= i
    return result
 
+def dlms(l, m, s, Theta):
+    
+    sq = np.sqrt(fac(l+m)*fac(l-m)*fac(l+s)*fac(l-s))
+    d = 0.
+    for k in range(max(0,m-s),min(l+m,l-s)+1):
+        d = d + (-1.)**k*np.sin(Theta/2.)**(2.*k+s-m)*np.cos(Theta/2.)**(2.*l+m-s-2.*k)/(fac(k)*fac(l+m-k)*fac(l-s-k)*fac(s-m+k))
+    return sq*d
+
+def Ylm(s,l,m,Theta,Phi):
+    
+    res = (-1.)**(-s)*np.sqrt((2.*l+1)/(4*np.pi))*dlms(l,m,-s,Theta)
+    
+    if res==0:
+        return 0.
+    else:
+        return complex(res*np.cos(m*Phi), res*np.sin(m*Phi))
+
+#-----------------------------------------------------------------
+#Other version of Spin-weighted spherical harmonic modes
 # coefficient function
 def Cslm(s, l, m):
     return np.sqrt(l*l*(4.0*l*l - 1.0)/((l*l - m*m)*(l*l - s*s)))
