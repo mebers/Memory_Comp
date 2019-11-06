@@ -202,7 +202,7 @@ def generate_LAL_modes(approximant, q, chiA0, chiB0, dt, M, \
         lalsim.SimInspiralWaveformParamsInsertModeArray(dictParams, ma)
 
     lmax = 5    # This in unused
-    hmodes = lalsim.SimInspiralChooseTDModes(phi_ref, dt, m1_kg, m2_kg, \
+    hmodes = lalsim.SimInspiralChooseTDModes(phi_ref,dt, m1_kg, m2_kg, \
         chiA0[0], chiA0[1], chiA0[2], chiB0[0], chiB0[1], chiB0[2], \
         f_low, f_ref, distance, dictParams, lmax, approxTag)
 
@@ -229,7 +229,7 @@ def dlms(l, m, s, Theta):
         d = d + (-1.)**k*np.sin(Theta/2.)**(2.*k+s-m)*np.cos(Theta/2.)**(2.*l+m-s-2.*k)/(fac(k)*fac(l+m-k)*fac(l-s-k)*fac(s-m+k))
     return sq*d
 
-def Ylm(s,l,m,Theta,Phi):
+def sYlm(s,l,m,Theta,Phi):
     
     res = (-1.)**(-s)*np.sqrt((2.*l+1)/(4*np.pi))*dlms(l,m,-s,Theta)
     
@@ -270,7 +270,7 @@ def s_lambda_lm(s, l, m, x):
         return Pn
 
 
-def sYlm(ss, ll, mm, theta, phi):
+def Ylm(ss, ll, mm, theta, phi):
    
     Pm = 1.0
 
