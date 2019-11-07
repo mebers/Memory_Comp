@@ -48,7 +48,7 @@ def h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,
     h20mem = np.cumsum(dh20mem)*dt
     hmem = h20mem*utils.sYlm(-2, 2, 0, inclination, np.pi/2-phi_ref)
 
-    return t, np.real(hmem), np.imag(hmem)
+    return t, hmem
 
 
 def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref, inclination, filepath=None):
@@ -111,7 +111,8 @@ def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref
     hmem_p = np.real((h20mem_p + 1j*h20mem_c)*utils.sYlm(-2, 2, 0, inclination, np.pi/2-phi_ref))
     hmem_c = (-1.)*np.imag((h20mem_p + 1j*h20mem_c)*utils.sYlm(-2, 2, 0, inclination, np.pi/2-phi_ref))
     
-    return t, hmem_p, hmem_c
+    hmem = hmem_p - 1.j*hmem_c
+    return t, hmem
 
 
 def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
@@ -183,8 +184,9 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
         for m in range(-ll,ll+1):
             hmem_p = hmem_p + np.real((memp_mode_dict['h_l%dm%d'%(ll, m)]+1j*memc_mode_dict['h_l%dm%d'%(ll, m)]) \
                                       *utils.sYlm(-2, ll, m, inclination, np.pi/2-phi_ref))
-            hmem_c = hmem_c - np.imag((memp_mode_dict['h_l%dm%d'%(ll, m)]+1j*memc_mode_dict['h_l%dm%d'%(ll, m)]) \
+            hmem_c = hmem_c + np.imag((memp_mode_dict['h_l%dm%d'%(ll, m)]+1j*memc_mode_dict['h_l%dm%d'%(ll, m)]) \
                                       *utils.sYlm(-2, ll, m, inclination, np.pi/2-phi_ref))
-
-    return t, hmem_p, hmem_c
-
+            
+            hmem = hmem_p - 1.j*hmem_c
+    
+    return t, hmem

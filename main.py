@@ -19,9 +19,9 @@ import memory
 approximant = 'NRSur7dq4'
 
 M = 60.  # Total mass in solar masses
-q = 1.   # mass ratio m1/m2
-chi1 = np.array([0., 0., 0.])   # Dimensionless spin vector of black hole 1
-chi2 = np.array([0., 0., 0.])   # Dimensionless spin vector of black hole 2
+q = 3.6   # mass ratio m1/m2
+chi1 = np.array([0.6, 0.5, -0.3])   # Dimensionless spin vector of black hole 1
+chi2 = np.array([0.4, -0.5, 0.4])   # Dimensionless spin vector of black hole 2
 
 inclination = np.pi/2   # Inclination angle (0 is face-on, np.pi/2 is edge-on)
 phi_ref = 0.            # reference phase angle, only goes into the Ylms
@@ -33,31 +33,42 @@ f_low = 0.
 f_ref = f_low
 
 # Set the timestep, should be small enough especially for highly oscillatory signals (small masses)
-dt = 1./(4096)
+dt = 1./(4*4096)
 
 
 # h_dom_mem(-): Compute the memory in the h20 mode sourced solely by the h22 mode
-# Returns: time array, memory in the plus polarization, memory in the cross polarization
+# Returns: time array, memory in the plus polarization -1j*memory in the cross polarization
 # Has to be used for other waveform models than the surrogates.
 
-t, hmemdom, hmemdomc = memory.h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+t, hmemdom = memory.h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
 
 # h_memory20(-): Compute the memory in the h20 mode sourced by all oscillatory modes
-# Returns: time array, memory in the plus polarization, memory in the cross polarization
+# Returns: time array, memory in the plus polarization -1j*memory in the cross polarization
 
 #tt, hmem20, hmemc20 = memory.h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
 
 # h_memory(-): Compute the memory in all modes, sourced by all oscillatory modes
-# Returns: time array, memory in the plus polarization, memory in the cross polarization
+# Returns: time array, memory in the plus polarization -1j*memory in the cross polarization
 
-ttt, hmem, hmemc = memory.h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
+ttt, hmem = memory.h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
 
+
+# To generate the oscillatory waveform, call:
+tosc, hosc = utils.generate_LAL_waveform(approximant, q, chi1, chi2, dt, M, dist_mpc, \
+                    f_low, f_ref, inclination, phi_ref, ellMax=None, single_mode=None)
 
 # Make plots
-plt.plot(t,np.real(hmemdom),label=r'memory from $h_{22}$')
+#plt.plot(t,np.real(hmemdom),label=r'memory from $h_{22}$')
 
-plt.plot(ttt,hmem,label=r'memory in $h_+$')
-plt.plot(ttt,hmemc,label=r'memory in $h_\times$')
+#plt.plot(tosc, np.real(hosc),label=r'$h_+$')
+plt.plot(tosc, np.real(hosc)+np.real(hmem),label=r'$h_+$')
+
+plt.plot(ttt,np.real(hmem),label=r'memory in $h_+$')
+
+plt.plot(ttt,(-1)*np.imag(hmem),label=r'memory in $h_\times$')
+
+plt.plot(tosc,(-1)*(np.imag(hmem)+np.imag(hosc)),label=r'$h_\times$')
+
 plt.legend(loc=2)
 plt.xlabel(r'$t$')
 plt.ylabel(r'$h^\mathrm{mem}$')
