@@ -9,11 +9,8 @@
 import lalsimulation as lalsim
 import h5py
 import numpy as np
-import matplotlib.pyplot as plt
 from sympy.physics.wigner import wigner_3j
 import utils
-from timeit import default_timer as timer
-
 
 
 # Evaluating G function.
@@ -134,7 +131,7 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
         print('f_low: %d'%f_low)
         
     else:
-        print('Use the surrogate waveforms "NRSur7dq2" or "NRSur7dq2", for other waveform models \
+        print('Use the surrogate waveforms "NRSur7dq2" or "NRSur7dq4", for other waveform models \
                     the memory computation is not working yet')
         exit()
     
@@ -191,61 +188,3 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
 
     return t, hmem_p, hmem_c
 
-# Generate a waveform
-dt = 1./(1048576)
-dist_mpc = 0.01
-# For the surrogates 0 will use the full waveform
-f_low = 0.
-f_ref = 0.
-
-q = 1.
-chi1 = np.array([0., 0., 0.])
-chi2 = np.array([0., 0., 0.])
-
-#q = 2.7
-#chi1 = np.array([0.3, -0.6, 0.5])
-#chi2 = np.array([0.4, -0.3, 0.6])
-M = 1.
-inclination = np.pi/2
-phi_ref = 0.
-
-approximant = 'NRSur7dq4'
-
-'''
-filepath = '/home/sebastian.khan/ligo-nr-data/lvcnr-lfs/SXS/SXS_BBH_0001_Res5.h5'
-t, hmem20, hmemc20 = h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination,filepath)
-plt.plot(t,hmem20,label=r'memory in $h_+^{20}$')
-
-
-approximant = 'SEOBNRv4'
-t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-plt.plot(t,np.real(hmemdom),label='SEOBNRv4')
-
-approximant = 'IMRPhenomD'
-t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-plt.plot(t,np.real(hmemdom),label='IMRPhenomD')
-
-approximant = 'NRSur7dq2'
-t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-plt.plot(t,np.real(hmemdom),label='NRSur7dq2')
-
-approximant = 'NRSur7dq4'
-t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-plt.plot(t,np.real(hmemdom),label='NRSur7dq4')
-'''
-t, hmemdom, hmemdomc = h_dom_mem(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-#tt, hmem20, hmemc20 = h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-ttt, hmem, hmemc = h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination)
-print(hmemdom[-1])
-print(hmem[-1])
-plt.plot(t,np.real(hmemdom),label='Dominant memory')
-#plt.plot(tt,hmem20,label=r'memory in $h_+^{20}$')
-#plt.plot(tt,hmemc20,label=r'memory in $h_\times^{20}$')
-plt.plot(ttt,hmem,label=r'memory in $h_+$')
-plt.plot(ttt,hmemc,label=r'memory in $h_\times$')
-plt.legend(loc=2)
-plt.xlabel(r'$t$')
-plt.ylabel(r'$h^\mathrm{mem}$')
-plt.tight_layout()
-plt.savefig('memory.pdf')
-plt.close()
