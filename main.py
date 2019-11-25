@@ -19,9 +19,14 @@ import memory
 approximant = 'NRSur7dq4'
 
 M = 60.  # Total mass in solar masses
-q = 1.0   # mass ratio m1/m2
-chi1 = np.array([0.0, 0.0, 0.])   # Dimensionless spin vector of black hole 1
-chi2 = np.array([0.0, 0., 0.])   # Dimensionless spin vector of black hole 2
+
+#q = 1.0   # mass ratio m1/m2
+#chi1 = np.array([0.0, 0.0, 0.])   # Dimensionless spin vector of black hole 1
+#chi2 = np.array([0.0, 0., 0.])   # Dimensionless spin vector of black hole 2
+
+q = 3.4   # mass ratio m1/m2
+chi1 = np.array([0.6, 0.5, -0.3])   # Dimensionless spin vector of black hole 1
+chi2 = np.array([0.4, -0.5, 0.4])   # Dimensionless spin vector of black hole 2
 
 inclination = np.pi/2   # Inclination angle (0 is face-on, np.pi/2 is edge-on)
 phi_ref = 0.            # reference phase angle, only goes into the Ylms
@@ -29,7 +34,7 @@ dist_mpc = 100.         # Distance to the binary in Mpc
 
 # Choose starting and reference frequency of the waveform
 # For the surrogates and NR waveforms: 0 will use the full waveform
-f_low = 30.
+f_low = 20.
 f_ref = f_low
 
 # Set the timestep, should be small enough especially for highly oscillatory signals (small masses)
@@ -79,3 +84,5 @@ plt.xlabel(r'$t$')
 plt.ylabel(r'$h_+(t)$')
 plt.tight_layout()
 plt.savefig('test.pdf')
+#plt.show()
+

@@ -239,7 +239,7 @@ def generate_LAL_modes(approximant, q, chiA0, chiB0, dt, M, \
         lalsim.SimInspiralWaveformParamsInsertModeArray(dictParams, ma)
 
     lmax = 5    # This in unused
-    hmodes = lalsim.SimInspiralChooseTDModes(phi_ref,dt, m1_kg, m2_kg, \
+    hmodes = lalsim.SimInspiralChooseTDModes(phi_ref, dt, m1_kg, m2_kg, \
         chiA0[0], chiA0[1], chiA0[2], chiB0[0], chiB0[1], chiB0[2], \
         f_low, f_ref, distance, dictParams, lmax, approxTag)
 
