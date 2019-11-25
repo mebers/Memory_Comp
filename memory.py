@@ -118,10 +118,22 @@ def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref
 def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
     
     # For the surrogates directly take the individual modes
-    if approximant in ('NRSur7dq4','NRSur7dq2','SEOBNRv4PHM'):
+    if approximant in ('NRSur7dq4','NRSur7dq2','NRHybSur3dq8','SEOBNRv4PHM'):
         t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
                 M, dist_mpc, f_low, f_ref,phi_ref)
-    
+
+        # For the HybridSurrogate, -m modes are not directly created
+        if approximant == 'NRHybSur3dq8':
+            for ll in range(2,5):
+                for m in range(-ll,0):
+                    # The (4,1) and (4,0) modes are not created by this model
+                    if (ll==4 and m == -1):
+                        mode_dict['h_l%dm%d'%(ll, 0)] = np.zeros(len(t))
+                        mode_dict['h_l%dm%d'%(ll, -m)] = np.zeros(len(t))
+                        mode_dict['h_l%dm%d'%(ll, m)] = np.zeros(len(t))
+                    else:
+                        mode_dict['h_l%dm%d'%(ll, m)] = (-1)**ll*np.conjugate(mode_dict['h_l%dm%d'%(ll, (-1*m))])
+
     # Choose_TD_modes of NR waveform does not work yet...    
     elif approximant == 'NR_hdf5':
         t, mode_dict, q, s1x, s1y, s1z, s2x, s2y, s2z, f_low = utils.load_lvcnr_data(filepath, \
