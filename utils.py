@@ -158,6 +158,43 @@ def generate_LAL_waveform(approximant, q, chiA0, chiB0, dt, M, \
     return t, h
 
 #-----------------------------------------------------------------
+def generate_LAL_FDwaveform(approximant, q, chiA0, chiB0, df, M, \
+    dist_mpc, f_min, f_max, f_ref, inclination=0, phi_ref=0., ellMax=None, \
+    single_mode=None):
+
+    distance = dist_mpc* 1.0e6 * PC_SI
+    approxTag = lalsim.SimInspiralGetApproximantFromString(approximant)
+
+    # component masses of the binary
+    m1_kg =  M*MSUN_SI*q/(1.+q)
+    m2_kg =  M*MSUN_SI/(1.+q)
+
+    if single_mode is not None and ellMax is not None:
+        raise Exception("Specify only one of single_mode or ellMax")
+
+    dictParams = lal.CreateDict()
+    # If ellMax, load all modes with ell<=ellMax
+    if ellMax is not None:
+        ma=lalsim.SimInspiralCreateModeArray()
+        for ell in range(2, ellMax+1):
+            lalsim.SimInspiralModeArrayActivateAllModesAtL(ma, ell)
+        lalsim.SimInspiralWaveformParamsInsertModeArray(dictParams, ma)
+    elif single_mode is not None:
+    # If a single_mode is given, load only that mode (l,m) and (l,-m)
+        dictParams = set_single_mode(dictParams, single_mode[0], single_mode[1])
+
+    hp, hc = lalsim.SimInspiralChooseFDWaveform(\
+        m1_kg, m2_kg, chiA0[0], chiA0[1], chiA0[2], \
+        chiB0[0], chiB0[1], chiB0[2], \
+        distance, inclination, phi_ref, 0, 0, 0,\
+        df, f_min, f_max, f_ref, dictParams, approxTag)
+
+    h = np.array(hp.data.data - 1.j*hc.data.data)
+    f = np.arange(f_min,f_min+df*len(h),df)
+
+    return f, h
+
+#-----------------------------------------------------------------
 def generate_dynamics(approximant, q, chiA0, chiB0, dt, M, \
     f_low, f_ref, phi_ref=0.):
 
