@@ -19,7 +19,7 @@ import memory
 approximant = 'NRSur7dq4'
 
 M = 60.  # Total mass in solar masses
-q = 3.6   # mass ratio m1/m2
+q = 3.4   # mass ratio m1/m2
 chi1 = np.array([0.6, 0.5, -0.3])   # Dimensionless spin vector of black hole 1
 chi2 = np.array([0.4, -0.5, 0.4])   # Dimensionless spin vector of black hole 2
 
@@ -73,4 +73,4 @@ plt.legend(loc=2)
 plt.xlabel(r'$t$')
 plt.ylabel(r'$h^\mathrm{mem}$')
 plt.tight_layout()
-plt.savefig('memory.pdf')
+plt.show()

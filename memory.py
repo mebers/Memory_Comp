@@ -118,7 +118,7 @@ def h_memory20(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref
 def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,inclination):
     
     # For the surrogates directly take the individual modes
-    if approximant in ('NRSur7dq4','NRSur7dq2'):
+    if approximant in ('NRSur7dq4','NRSur7dq2','SEOBNRv4PHM'):
         t, mode_dict = utils.generate_LAL_modes(approximant, q, chi1, chi2, dt, \
                 M, dist_mpc, f_low, f_ref,phi_ref)
     
@@ -132,8 +132,7 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
         print('f_low: %d'%f_low)
         
     else:
-        print('Use the surrogate waveforms "NRSur7dq2" or "NRSur7dq4", for other waveform models \
-                    the memory computation is not working yet')
+        print('Use the surrogate waveforms "NRSur7dq2", "NRSur7dq4" or the precessing effective one body model with higher modes "SEOBNRv4PHM", for other waveform models you can use the function h_dom_mem(), which computes the memory due to the h22 mode')
         exit()
     
     # Take time derivative of oscillatory hlm modes
