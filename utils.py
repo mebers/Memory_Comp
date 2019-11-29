@@ -7,33 +7,6 @@ import lalsimulation as lalsim
 from lal import MSUN_SI, MTSUN_SI, PC_SI, C_SI
 
 #-----------------------------------------------------------------
-def generate_random_params(qMax, Mmin, chiMax, Mmax=300):
-
-    q = np.random.uniform(1, qMax)
-
-    chi1mag = np.random.uniform(0, chiMax)
-    chi1th = np.random.uniform(0, np.pi)
-    chi1ph = np.random.uniform(0, 2*np.pi)
-    chi1 = [chi1mag * np.sin(chi1th) * np.cos(chi1ph), \
-            chi1mag * np.sin(chi1th) * np.sin(chi1ph), \
-            chi1mag * np.cos(chi1th), \
-            ]
-
-    chi2mag = np.random.uniform(0, chiMax)
-    chi2th = np.random.uniform(0, np.pi)
-    chi2ph = np.random.uniform(0, 2*np.pi)
-    chi2 = [chi2mag * np.sin(chi2th) * np.cos(chi2ph), \
-            chi2mag * np.sin(chi2th) * np.sin(chi2ph), \
-            chi2mag * np.cos(chi2th), \
-            ]
-
-    M = np.random.uniform(Mmin, Mmax)
-    inclination = np.random.uniform(0, np.pi)
-    phi_ref = np.random.uniform(0, 2*np.pi)
-
-    return q, chi1, chi2, M, inclination, phi_ref
-
-#-----------------------------------------------------------------
 def set_single_mode(params, l, m):
     """ Sets modes in params dict.
         Only adds (l,m) and (l,-m) modes.
@@ -120,6 +93,7 @@ def load_lvcnr_data(filepath, mode, M, dt, inclination, phiRef, \
 
     return t, h, q, s1x, s1y, s1z, s2x, s2y, s2z, f_low, f_ref
     '''
+    
 #-----------------------------------------------------------------
 def generate_LAL_waveform(approximant, q, chiA0, chiB0, dt, M, \
     dist_mpc, f_low, f_ref, inclination=0, phi_ref=0., ellMax=None, \
@@ -193,31 +167,6 @@ def generate_LAL_FDwaveform(approximant, q, chiA0, chiB0, df, M, \
     f = np.arange(f_min,f_min+df*len(h),df)
 
     return f, h
-
-#-----------------------------------------------------------------
-def generate_dynamics(approximant, q, chiA0, chiB0, dt, M, \
-    f_low, f_ref, phi_ref=0.):
-
-    approxTag = lalsim.SimInspiralGetApproximantFromString(approximant)
-
-    # component masses of the binary
-    m1_kg =  M*MSUN_SI*q/(1.+q)
-    m2_kg =  M*MSUN_SI/(1.+q)
-
-    orbphase, quat0, quat1, quat2, quat3, chiAx, chiAy, \
-        chiAz, chiBx, chiBy, chiBz = lalsim.PrecessingNRSurDynamics(phi_ref, \
-        dt, m1_kg, m2_kg, f_low, f_ref, chiA0[0], chiA0[1], chiA0[2], \
-        chiB0[0], chiB0[1], chiB0[2], approxTag)
-
-    t = dt *np.arange(len(orbphase.data))
-
-    quat = np.array([quat0.data, quat1.data, quat2.data, quat3.data])
-    chiA = np.array([chiAx.data, chiAy.data, chiAz.data]).T
-    chiB = np.array([chiBx.data, chiBy.data, chiBz.data]).T
-
-    return t, orbphase.data, quat, chiA, chiB
-
-
 
 #-----------------------------------------------------------------
 def generate_LAL_modes(approximant, q, chiA0, chiB0, dt, M, \

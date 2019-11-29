@@ -17,7 +17,7 @@ import utils
 def G_ang_int(l1,l2,l3,m1,m2,m3):
     #Evalute angular integral using equation (10) in memory paper
     
-    eval = (-1.)**(m1+m3)*np.sqrt(((2.*l1+1.)*(2.*l2+1.)*(2.*l3+1.))/(4.*np.pi)) \
+    eval = (-1.)**(m1+m2)*np.sqrt(((2.*l1+1.)*(2.*l2+1.)*(2.*l3+1.))/(4.*np.pi)) \
                 *wigner_3j(l1,l2,l3,0,2,-2)*wigner_3j(l1,l2,l3,-m1,m2,-m3)
     
     return float(eval)
