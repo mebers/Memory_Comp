@@ -133,6 +133,14 @@ def h_memory(approximant, q, chi1, chi2, dt, M, dist_mpc, f_low,f_ref, phi_ref,i
                         mode_dict['h_l%dm%d'%(ll, m)] = np.zeros(len(t))
                     else:
                         mode_dict['h_l%dm%d'%(ll, m)] = (-1)**ll*np.conjugate(mode_dict['h_l%dm%d'%(ll, (-1*m))])
+            
+        # Choose time zero where the maximum of the summed individual modes is
+        hlmtot = np.zeros(len(t))
+        for mode in mode_dict.keys():
+            hlmtot = hlmtot + np.array(mode_dict[mode])
+        # Find t0 as the max of of all modes
+        t0 = int(np.where(abs(hlmtot) == np.amax(abs(hlmtot)))[0])
+        t = t - t[t0]
 
     # Choose_TD_modes of NR waveform does not work yet...    
     elif approximant == 'NR_hdf5':
